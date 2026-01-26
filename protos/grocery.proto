@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package grocery;
+
+// Enum for order types
+enum OrderType {
+  GROCERY_ORDER = 0;
+  RESTOCK_ORDER = 1;
+}
+
+// Enum for response status
+enum StatusCode {
+  OK = 0;
+  BAD_REQUEST = 1;
+}
+
+// Individual item with name and quantity
+message Item {
+  string name = 1;
+  int32 quantity = 2;
+}
+
+// Fulfilled item (includes how much was actually fulfilled)
+message FulfilledItem {
+  string name = 1;
+  int32 quantity_requested = 2;
+  int32 quantity_fulfilled = 3;
+}
+
+// Category containing list of items
+message Category {
+  repeated Item items = 1;
+}
+
+// Category containing list of fulfilled items
+message FulfilledCategory {
+  repeated FulfilledItem items = 1;
+}
+
+// All items organized by category
+message OrderItems {
+  Category bread = 1;
+  Category dairy = 2;
+  Category meat = 3;
+  Category produce = 4;
+  Category party = 5;
+}
+
+// Fulfilled items organized by category
+message FulfilledItems {
+  FulfilledCategory bread = 1;
+  FulfilledCategory dairy = 2;
+  FulfilledCategory meat = 3;
+  FulfilledCategory produce = 4;
+  FulfilledCategory party = 5;
+}
+
+// Request message for grocery order (from Ordering to Inventory)
+message GroceryOrderRequest {
+  string customer_id = 1;
+  OrderType order_type = 2;
+  OrderItems items = 3;
+}
+
+// Request message for restock order (from Ordering to Inventory)
+message RestockOrderRequest {
+  string supplier_id = 1;
+  OrderType order_type = 2;
+  OrderItems items = 3;
+}
+
+// Response message (from Inventory to Ordering)
+message OrderResponse {
+  StatusCode status = 1;
+  string message = 2;
+  string order_id = 3;
+  FulfilledItems items_fulfilled = 4;
+  float total_price = 5;
+}
+
+// gRPC Service definition
+service InventoryService {
+  // Process a grocery order from a customer/refrigerator
+  rpc ProcessGroceryOrder(GroceryOrderRequest) returns (OrderResponse);
+
+  // Process a restock order from a supplier/truck
+  rpc ProcessRestockOrder(RestockOrderRequest) returns (OrderResponse);
+}

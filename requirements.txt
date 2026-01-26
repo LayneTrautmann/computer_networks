@@ -1,0 +1,17 @@
+# Streamlit Client
+streamlit>=1.30.0
+
+# Flask Ordering Service
+flask>=3.0.0
+requests>=2.31.0
+
+# gRPC and Protobuf
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
+protobuf>=4.25.0
+
+# ZeroMQ (for Milestone 2)
+pyzmq>=25.1.0
+
+# Flatbuffers (for Milestone 2)
+flatbuffers>=23.5.26
