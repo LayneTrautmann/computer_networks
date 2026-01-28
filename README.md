@@ -2,25 +2,6 @@
 
 ## Automated Grocery Ordering and Delivery Service
 
-### Project Status
-
-**Milestone 1 - In Progress**
-
-#### Completed:
-- [x] Project structure created
-- [x] Protobuf schema (`protos/grocery.proto`)
-- [x] Generated Python gRPC code (`grocery_pb2.py`, `grocery_pb2_grpc.py`)
-- [x] JSON schema documentation (`schemas/json_schema.md`)
-- [x] Tested protobuf serialization/deserialization
-- [x] Streamlit client (Grocery + Restock orders)
-- [x] Flask Ordering service
-- [x] Basic Inventory service (returns success)
-- [x] HTTP-JSON communication (Client ↔ Ordering)
-- [x] gRPC-Protobuf communication (Ordering ↔ Inventory)
-
-#### TODO:
-- [ ] End-to-end testing
-
 ---
 
 ### Project Structure
@@ -46,7 +27,7 @@ computer_networks/
 
 ---
 
-### Setup (Works on Mac, Windows, and Linux)
+### Local Setup (Works on Mac, Windows, and Linux)
 
 #### 1. Clone the repository
 ```bash
@@ -68,50 +49,73 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-**Windows (PowerShell):**
-```bash
-python -m venv venv
-venv\Scripts\Activate.ps1
-```
-
 #### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
----
+#### 4. Run all services locally (3 terminals)
 
-### Running the Streamlit Client
-
+**Terminal 1 - Inventory Service:**
 ```bash
-streamlit run client/app.py
-```
-
-This opens a browser at `http://localhost:8501` with:
-- **Grocery Order tab**: Simulates a smart refrigerator placing an order
-- **Restock Order tab**: Simulates a supplier truck restocking inventory
-
-The client sends JSON requests to the Flask Ordering Service (once built).
-
----
-
-### Running the Ordering Service (TODO - Partner Task)
-
-```bash
-python ordering_service/app.py
-```
-
-Runs on `http://localhost:5000`. Receives JSON from client, sends gRPC to Inventory.
-
----
-
-### Running the Inventory Service (TODO - Partner Task)
-
-```bash
+source venv/bin/activate
 python inventory_service/server.py
 ```
 
-Runs gRPC server on port `50051`. Receives requests from Ordering service.
+**Terminal 2 - Ordering Service:**
+```bash
+source venv/bin/activate
+python ordering_service/app.py
+```
+
+**Terminal 3 - Streamlit Client:**
+```bash
+source venv/bin/activate
+streamlit run client/app.py
+```
+
+Then open `http://localhost:8501` in your browser.
+
+---
+
+### Running on Chamelon Cloud virtual machines
+
+team7-vm1: ip: 172.16.5.232, running: Inventory, port: 50051
+team7-vm2: ip: 172.16.5.8, running: Ordering, port: 5000
+team7-vm3: ip: 172.16.5.159, running: Client, port: 8501 
+
+Use 3 windows to ssh into each vm
+
+
+**VM1 (Inventory):**
+```bash
+cd computer_networks
+source venv/bin/activate
+python inventory_service/server.py
+```
+
+**VM2 (Ordering):**
+```bash
+cd computer_networks
+source venv/bin/activate
+INVENTORY_SERVICE_HOST=172.16.5.232 python ordering_service/app.py
+```
+
+**VM3 (Client):**
+```bash
+cd computer_networks
+source venv/bin/activate
+streamlit run client/app.py
+```
+
+#### Viewing on the browser
+
+Then run this on your computer:
+```bash
+ssh -L 8501:localhost:8501 team7_vm3
+```
+
+Then open `http://localhost:8501` in your browser.
 
 ---
 
@@ -123,33 +127,11 @@ python -m grpc_tools.protoc -I./protos --python_out=./protos --grpc_python_out=.
 
 ---
 
-### Team Work Division (Milestone 1)
 
-| Person | Task | Status |
-|--------|------|--------|
-| Layne | Schemas + Streamlit Client | Done |
-| Kevin | Flask Ordering Service | Done |
-| Partner 3 | Inventory Service | Done |
-
----
-
-### Communication Flow (Milestone 1)
+### Communication Flow
 
 ```
 Streamlit Client  --(HTTP/JSON)-->  Flask Ordering  --(gRPC/Protobuf)-->  Inventory
 (port 8501)                         (port 5000)                           (port 50051)
 ```
 
----
-
-### Key Files for Each Task
-
-**Flask Ordering Service (Partner 2):**
-- Create: `ordering_service/app.py`
-- Read: `schemas/json_schema.md` (JSON format from client)
-- Read: `protos/grocery.proto` (Protobuf format to send to Inventory)
-
-**Inventory Service (Partner 3):**
-- Create: `inventory_service/server.py`
-- Read: `protos/grocery.proto` (Protobuf format to receive)
-- For now: Just return success response
