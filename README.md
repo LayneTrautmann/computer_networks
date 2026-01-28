@@ -13,12 +13,12 @@
 - [x] JSON schema documentation (`schemas/json_schema.md`)
 - [x] Tested protobuf serialization/deserialization
 - [x] Streamlit client (Grocery + Restock orders)
+- [x] Flask Ordering service
+- [x] Basic Inventory service (returns success)
+- [x] HTTP-JSON communication (Client ↔ Ordering)
+- [x] gRPC-Protobuf communication (Ordering ↔ Inventory)
 
 #### TODO:
-- [ ] Flask Ordering service
-- [ ] Basic Inventory service (returns success)
-- [ ] HTTP-JSON communication (Client ↔ Ordering)
-- [ ] gRPC-Protobuf communication (Ordering ↔ Inventory)
 - [ ] End-to-end testing
 
 ---
@@ -36,8 +36,10 @@ computer_networks/
 │   └── json_schema.md          # JSON format documentation
 ├── client/
 │   └── app.py                  # Streamlit client GUI
-├── ordering_service/           # Flask ordering service (TODO)
-├── inventory_service/          # gRPC inventory service (TODO)
+├── ordering_service/
+│   └── app.py                  # Flask ordering service
+├── inventory_service/
+│   └── server.py               # gRPC inventory service
 ├── requirements.txt            # Python dependencies
 └── README.md
 ```
@@ -126,8 +128,8 @@ python -m grpc_tools.protoc -I./protos --python_out=./protos --grpc_python_out=.
 | Person | Task | Status |
 |--------|------|--------|
 | Layne | Schemas + Streamlit Client | Done |
-| Partner 2 | Flask Ordering Service | TODO |
-| Partner 3 | Inventory Service | TODO |
+| Kevin | Flask Ordering Service | Done |
+| Partner 3 | Inventory Service | Done |
 
 ---
 
