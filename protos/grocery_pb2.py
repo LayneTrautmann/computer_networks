@@ -24,17 +24,17 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rgrocery.proto\x12\x07grocery\"&\n\x04Item\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\x05\"U\n\rFulfilledItem\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1a\n\x12quantity_requested\x18\x02 \x01(\x05\x12\x1a\n\x12quantity_fulfilled\x18\x03 \x01(\x05\"(\n\x08\x43\x61tegory\x12\x1c\n\x05items\x18\x01 \x03(\x0b\x32\r.grocery.Item\":\n\x11\x46ulfilledCategory\x12%\n\x05items\x18\x01 \x03(\x0b\x32\x16.grocery.FulfilledItem\"\xb7\x01\n\nOrderItems\x12 \n\x05\x62read\x18\x01 \x01(\x0b\x32\x11.grocery.Category\x12 \n\x05\x64\x61iry\x18\x02 \x01(\x0b\x32\x11.grocery.Category\x12\x1f\n\x04meat\x18\x03 \x01(\x0b\x32\x11.grocery.Category\x12\"\n\x07produce\x18\x04 \x01(\x0b\x32\x11.grocery.Category\x12 \n\x05party\x18\x05 \x01(\x0b\x32\x11.grocery.Category\"\xe8\x01\n\x0e\x46ulfilledItems\x12)\n\x05\x62read\x18\x01 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12)\n\x05\x64\x61iry\x18\x02 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12(\n\x04meat\x18\x03 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12+\n\x07produce\x18\x04 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12)\n\x05party\x18\x05 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\"v\n\x13GroceryOrderRequest\x12\x13\n\x0b\x63ustomer_id\x18\x01 \x01(\t\x12&\n\norder_type\x18\x02 \x01(\x0e\x32\x12.grocery.OrderType\x12\"\n\x05items\x18\x03 \x01(\x0b\x32\x13.grocery.OrderItems\"v\n\x13RestockOrderRequest\x12\x13\n\x0bsupplier_id\x18\x01 \x01(\t\x12&\n\norder_type\x18\x02 \x01(\x0e\x32\x12.grocery.OrderType\x12\"\n\x05items\x18\x03 \x01(\x0b\x32\x13.grocery.OrderItems\"\x9e\x01\n\rOrderResponse\x12#\n\x06status\x18\x01 \x01(\x0e\x32\x13.grocery.StatusCode\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x10\n\x08order_id\x18\x03 \x01(\t\x12\x30\n\x0fitems_fulfilled\x18\x04 \x01(\x0b\x32\x17.grocery.FulfilledItems\x12\x13\n\x0btotal_price\x18\x05 \x01(\x02*1\n\tOrderType\x12\x11\n\rGROCERY_ORDER\x10\x00\x12\x11\n\rRESTOCK_ORDER\x10\x01*%\n\nStatusCode\x12\x06\n\x02OK\x10\x00\x12\x0f\n\x0b\x42\x41\x44_REQUEST\x10\x01\x32\xac\x01\n\x10InventoryService\x12K\n\x13ProcessGroceryOrder\x12\x1c.grocery.GroceryOrderRequest\x1a\x16.grocery.OrderResponse\x12K\n\x13ProcessRestockOrder\x12\x1c.grocery.RestockOrderRequest\x1a\x16.grocery.OrderResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rgrocery.proto\x12\x07grocery\"&\n\x04Item\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08quantity\x18\x02 \x01(\x05\"U\n\rFulfilledItem\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1a\n\x12quantity_requested\x18\x02 \x01(\x05\x12\x1a\n\x12quantity_fulfilled\x18\x03 \x01(\x05\"(\n\x08\x43\x61tegory\x12\x1c\n\x05items\x18\x01 \x03(\x0b\x32\r.grocery.Item\":\n\x11\x46ulfilledCategory\x12%\n\x05items\x18\x01 \x03(\x0b\x32\x16.grocery.FulfilledItem\"\xb7\x01\n\nOrderItems\x12 \n\x05\x62read\x18\x01 \x01(\x0b\x32\x11.grocery.Category\x12 \n\x05\x64\x61iry\x18\x02 \x01(\x0b\x32\x11.grocery.Category\x12\x1f\n\x04meat\x18\x03 \x01(\x0b\x32\x11.grocery.Category\x12\"\n\x07produce\x18\x04 \x01(\x0b\x32\x11.grocery.Category\x12 \n\x05party\x18\x05 \x01(\x0b\x32\x11.grocery.Category\"\xe8\x01\n\x0e\x46ulfilledItems\x12)\n\x05\x62read\x18\x01 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12)\n\x05\x64\x61iry\x18\x02 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12(\n\x04meat\x18\x03 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12+\n\x07produce\x18\x04 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\x12)\n\x05party\x18\x05 \x01(\x0b\x32\x1a.grocery.FulfilledCategory\"v\n\x13GroceryOrderRequest\x12\x13\n\x0b\x63ustomer_id\x18\x01 \x01(\t\x12&\n\norder_type\x18\x02 \x01(\x0e\x32\x12.grocery.OrderType\x12\"\n\x05items\x18\x03 \x01(\x0b\x32\x13.grocery.OrderItems\"v\n\x13RestockOrderRequest\x12\x13\n\x0bsupplier_id\x18\x01 \x01(\t\x12&\n\norder_type\x18\x02 \x01(\x0e\x32\x12.grocery.OrderType\x12\"\n\x05items\x18\x03 \x01(\x0b\x32\x13.grocery.OrderItems\"\x9e\x01\n\rOrderResponse\x12#\n\x06status\x18\x01 \x01(\x0e\x32\x13.grocery.StatusCode\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x10\n\x08order_id\x18\x03 \x01(\t\x12\x30\n\x0fitems_fulfilled\x18\x04 \x01(\x0b\x32\x17.grocery.FulfilledItems\x12\x13\n\x0btotal_price\x18\x05 \x01(\x02\"\xbb\x01\n\rRobotResponse\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x12\n\nrequest_id\x18\x02 \x01(\t\x12\x10\n\x08robot_id\x18\x03 \x01(\t\x12\r\n\x05\x61isle\x18\x04 \x01(\t\x12#\n\x06status\x18\x05 \x01(\x0e\x32\x13.grocery.StatusCode\x12\x0f\n\x07message\x18\x06 \x01(\t\x12-\n\ritems_handled\x18\x07 \x03(\x0b\x32\x16.grocery.FulfilledItem\"@\n\x08RobotAck\x12#\n\x06status\x18\x01 \x01(\x0e\x32\x13.grocery.StatusCode\x12\x0f\n\x07message\x18\x02 \x01(\t*1\n\tOrderType\x12\x11\n\rGROCERY_ORDER\x10\x00\x12\x11\n\rRESTOCK_ORDER\x10\x01*%\n\nStatusCode\x12\x06\n\x02OK\x10\x00\x12\x0f\n\x0b\x42\x41\x44_REQUEST\x10\x01\x32\xac\x01\n\x10InventoryService\x12K\n\x13ProcessGroceryOrder\x12\x1c.grocery.GroceryOrderRequest\x1a\x16.grocery.OrderResponse\x12K\n\x13ProcessRestockOrder\x12\x1c.grocery.RestockOrderRequest\x1a\x16.grocery.OrderResponse2I\n\x0cRobotService\x12\x39\n\x0cReportResult\x12\x16.grocery.RobotResponse\x1a\x11.grocery.RobotAckb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'grocery_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ORDERTYPE']._serialized_start=1077
-  _globals['_ORDERTYPE']._serialized_end=1126
-  _globals['_STATUSCODE']._serialized_start=1128
-  _globals['_STATUSCODE']._serialized_end=1165
+  _globals['_ORDERTYPE']._serialized_start=1333
+  _globals['_ORDERTYPE']._serialized_end=1382
+  _globals['_STATUSCODE']._serialized_start=1384
+  _globals['_STATUSCODE']._serialized_end=1421
   _globals['_ITEM']._serialized_start=26
   _globals['_ITEM']._serialized_end=64
   _globals['_FULFILLEDITEM']._serialized_start=66
@@ -53,6 +53,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_RESTOCKORDERREQUEST']._serialized_end=914
   _globals['_ORDERRESPONSE']._serialized_start=917
   _globals['_ORDERRESPONSE']._serialized_end=1075
-  _globals['_INVENTORYSERVICE']._serialized_start=1168
-  _globals['_INVENTORYSERVICE']._serialized_end=1340
+  _globals['_ROBOTRESPONSE']._serialized_start=1078
+  _globals['_ROBOTRESPONSE']._serialized_end=1265
+  _globals['_ROBOTACK']._serialized_start=1267
+  _globals['_ROBOTACK']._serialized_end=1331
+  _globals['_INVENTORYSERVICE']._serialized_start=1424
+  _globals['_INVENTORYSERVICE']._serialized_end=1596
+  _globals['_ROBOTSERVICE']._serialized_start=1598
+  _globals['_ROBOTSERVICE']._serialized_end=1671
 # @@protoc_insertion_point(module_scope)

@@ -78,6 +78,23 @@ message OrderResponse {
   float total_price = 5;
 }
 
+// Robot response after fetching or restocking items
+message RobotResponse {
+  string order_id = 1;
+  string request_id = 2;       // customer_id or supplier_id
+  string robot_id = 3;         // e.g., "robot_bread", "robot_dairy"
+  string aisle = 4;            // which aisle this robot is responsible for
+  StatusCode status = 5;
+  string message = 6;
+  repeated FulfilledItem items_handled = 7;
+}
+
+// Acknowledgment from Inventory after receiving robot response
+message RobotAck {
+  StatusCode status = 1;
+  string message = 2;
+}
+
 // gRPC Service definition
 service InventoryService {
   // Process a grocery order from a customer/refrigerator
@@ -85,4 +102,10 @@ service InventoryService {
 
   // Process a restock order from a supplier/truck
   rpc ProcessRestockOrder(RestockOrderRequest) returns (OrderResponse);
+}
+
+// gRPC Service for Robot-to-Inventory communication
+service RobotService {
+  // Robot reports back to Inventory after fetching/restocking
+  rpc ReportResult(RobotResponse) returns (RobotAck);
 }

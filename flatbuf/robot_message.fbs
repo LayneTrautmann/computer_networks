@@ -1,0 +1,29 @@
+namespace GroceryRobot;
+
+// Type of action the robot should perform
+enum ActionType : byte {
+  FETCH = 0,
+  RESTOCK = 1
+}
+
+// Individual item with name and quantity
+table Item {
+  name: string;
+  quantity: int;
+}
+
+// Items for a specific aisle/category
+table AisleItems {
+  aisle: string;       // "bread", "dairy", "meat", "produce", "party"
+  items: [Item];
+}
+
+// Message published by Inventory to all Robots via ZeroMQ PUB-SUB
+table RobotMessage {
+  order_id: string;
+  request_id: string;       // customer_id or supplier_id
+  action_type: ActionType;
+  aisle_items: [AisleItems];
+}
+
+root_type RobotMessage;

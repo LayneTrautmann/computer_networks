@@ -143,3 +143,79 @@ class InventoryService(object):
             timeout,
             metadata,
             _registered_method=True)
+
+
+class RobotServiceStub(object):
+    """gRPC Service for Robot-to-Inventory communication
+    """
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.ReportResult = channel.unary_unary(
+                '/grocery.RobotService/ReportResult',
+                request_serializer=grocery__pb2.RobotResponse.SerializeToString,
+                response_deserializer=grocery__pb2.RobotAck.FromString,
+                _registered_method=True)
+
+
+class RobotServiceServicer(object):
+    """gRPC Service for Robot-to-Inventory communication
+    """
+
+    def ReportResult(self, request, context):
+        """Robot reports back to Inventory after fetching/restocking
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_RobotServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'ReportResult': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReportResult,
+                    request_deserializer=grocery__pb2.RobotResponse.FromString,
+                    response_serializer=grocery__pb2.RobotAck.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'grocery.RobotService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('grocery.RobotService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class RobotService(object):
+    """gRPC Service for Robot-to-Inventory communication
+    """
+
+    @staticmethod
+    def ReportResult(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/grocery.RobotService/ReportResult',
+            grocery__pb2.RobotResponse.SerializeToString,
+            grocery__pb2.RobotAck.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
