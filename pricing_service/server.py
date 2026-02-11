@@ -50,15 +50,16 @@ class PricingService(grocery_pb2_grpc.PricingServiceServicer):
             "streamers": 3.49,
         }
 
-    # Computing total prices 
     def GetPrice(self, request, context):
-        total = 0
+        total = 0.0
         for item in request.items:
-            total += (self._prices[item.name] * item.quantity_fulfilled)
-
+            price = self._prices.get(item.name)
+            if price is None:
+                continue  # Skip unknown items (or could return BAD_REQUEST)
+            total += price * item.quantity_fulfilled
         return grocery_pb2.PricingResponse(
-                status=grocery_pb2.OK,
-                total_price=total
+            status=grocery_pb2.OK,
+            total_price=total,
         )
 
 
