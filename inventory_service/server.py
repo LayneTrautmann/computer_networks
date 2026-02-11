@@ -29,6 +29,7 @@ ZMQ_PUB_ADDRESS = os.environ.get("ZMQ_PUB_ADDRESS", "tcp://*:5556")
 ZMQ_ROBOT_TOPIC = os.environ.get("ZMQ_ROBOT_TOPIC", "robot")
 ROBOT_RESPONSE_TIMEOUT_SEC = float(os.environ.get("ROBOT_RESPONSE_TIMEOUT_SEC", "10"))
 EXPECTED_ROBOTS = int(os.environ.get("EXPECTED_ROBOTS", "5"))
+PRICING_SERVICE_ADDRESS = os.environ.get("PRICING_SERVICE_HOST", "localhost") + ":50053"
 
 
 class OrderTracker:
@@ -147,7 +148,7 @@ class InventoryService(grocery_pb2_grpc.InventoryServiceServicer):
         self._pub_socket.send_multipart([ZMQ_ROBOT_TOPIC.encode("utf-8"), payload])
 
         # Wait for all robot responses (or timeout).
-        _, completed = self._tracker.wait_for_responses(
+        collected, completed = self._tracker.wait_for_responses(
             order_id, EXPECTED_ROBOTS, ROBOT_RESPONSE_TIMEOUT_SEC
         )
         if not completed:
@@ -157,8 +158,27 @@ class InventoryService(grocery_pb2_grpc.InventoryServiceServicer):
                 order_id=order_id,
                 total_price=0.0,
             )
+        # Items from all robots
+        all_items = []
+        for res in collected:
+            all_items.extend(res.items_handled)
 
-        return self._build_success_response(order_id)
+        pricing_request = grocery_pb2.PricingRequest(
+            order_id=order_id,
+            items=all_items
+        )
+        # Call Pricing Service
+        with grpc.insecure_channel(PRICING_SERVICE_ADDRESS) as channel:
+            stub = grocery_pb2_grpc.PricingServiceStub(channel)
+            grpc_response = stub.GetPrice(pricing_request)
+
+        
+        return grocery_pb2.OrderResponse(
+            status=grocery_pb2.OK,
+            message="Order is a success",
+            order_id=order_id,
+            total_price=grpc_response.total_price,
+        )
 
     def ProcessRestockOrder(self, request, context):
         order_id = str(uuid.uuid4())

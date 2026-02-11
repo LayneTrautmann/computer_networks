@@ -109,3 +109,20 @@ service RobotService {
   // Robot reports back to Inventory after fetching/restocking
   rpc ReportResult(RobotResponse) returns (RobotAck);
 }
+
+// Request from Inventory to Pricing (list of fulfilled items to price)
+message PricingRequest {
+  string order_id = 1;
+  repeated FulfilledItem items = 2;
+}
+
+// Response from Pricing to Inventory (total bill)
+message PricingResponse {
+  StatusCode status = 1;
+  float total_price = 2;
+}
+
+// gRPC Service for Inventory-to-Pricing communication
+service PricingService {
+  rpc GetPrice(PricingRequest) returns (PricingResponse);
+}

@@ -219,3 +219,78 @@ class RobotService(object):
             timeout,
             metadata,
             _registered_method=True)
+
+
+class PricingServiceStub(object):
+    """gRPC Service for Inventory-to-Pricing communication
+    """
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.GetPrice = channel.unary_unary(
+                '/grocery.PricingService/GetPrice',
+                request_serializer=grocery__pb2.PricingRequest.SerializeToString,
+                response_deserializer=grocery__pb2.PricingResponse.FromString,
+                _registered_method=True)
+
+
+class PricingServiceServicer(object):
+    """gRPC Service for Inventory-to-Pricing communication
+    """
+
+    def GetPrice(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_PricingServiceServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'GetPrice': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetPrice,
+                    request_deserializer=grocery__pb2.PricingRequest.FromString,
+                    response_serializer=grocery__pb2.PricingResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'grocery.PricingService', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    server.add_registered_method_handlers('grocery.PricingService', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class PricingService(object):
+    """gRPC Service for Inventory-to-Pricing communication
+    """
+
+    @staticmethod
+    def GetPrice(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/grocery.PricingService/GetPrice',
+            grocery__pb2.PricingRequest.SerializeToString,
+            grocery__pb2.PricingResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
