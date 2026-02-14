@@ -79,32 +79,67 @@ Then open `http://localhost:8501` in your browser.
 ---
 
 ### Running on Chamelon Cloud virtual machines
-
+```bash
 team7-vm1: ip: 172.16.5.232, running: Inventory, port: 50051
 team7-vm2: ip: 172.16.5.8, running: Ordering, port: 5000
 team7-vm3: ip: 172.16.5.159, running: Client, port: 8501 
+```
 
 Use 3 windows to ssh into each vm
 
 
 **VM1 (Inventory):**
 ```bash
-cd computer_networks
+VM1 (172.16.5.232) Backend: Inventory, Pricing, 5 Robots, Analytics
+
+Need to ssh into 8 VM1 windows.
+
+
+# In each tab first:
+cd ~/computer_networks
+git pull
 source venv/bin/activate
+pip install grpcio grpcio-tools protobuf pyzmq flatbuffers
+
+# Tab 1: Analytics
+python analytics_service/server.py
+
+# Tab 2: Pricing
+python pricing_service/server.py
+
+# Tab 3: Inventory
 python inventory_service/server.py
+
+# Tab 4-8: Robots
+python robot_service/robot.py bread
+python robot_service/robot.py dairy
+python robot_service/robot.py meat
+python robot_service/robot.py produce
+python robot_service/robot.py party
 ```
 
 **VM2 (Ordering):**
 ```bash
-cd computer_networks
+VM2 (172.16.5.8) - Ordering Service
+
+cd ~/computer_networks
+git pull
 source venv/bin/activate
-INVENTORY_SERVICE_HOST=172.16.5.232 python ordering_service/app.py
+pip install flask grpcio grpcio-tools protobuf pyzmq
+INVENTORY_SERVICE_HOST=172.16.5.232 ZMQ_ANALYTICS_ADDRESS=tcp://172.16.5.232:5557 python ordering_service/app.py
+
 ```
 
 **VM3 (Client):**
 ```bash
-cd computer_networks
+VM3 (172.16.5.159) - Streamlit Client
+
+
+cd ~/computer_networks
+git pull
 source venv/bin/activate
+pip install streamlit requests
+sed -i 's|http://localhost:5000|http://172.16.5.8:5000|' client/app.py
 streamlit run client/app.py
 ```
 
@@ -116,6 +151,15 @@ ssh -L 8501:localhost:8501 team7_vm3
 ```
 
 Then open `http://localhost:8501` in your browser.
+
+Generating the graphs: 
+```bash
+cd ~/computer_networks
+source venv/bin/activate
+pip install pandas matplotlib
+python analytics_service/plot.py
+```
+Plots are saved to analytics_service/plots/
 
 ---
 
