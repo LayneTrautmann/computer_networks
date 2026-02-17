@@ -163,6 +163,15 @@ Plots are saved to analytics_service/plots/
 
 ---
 
+---
+
+## PA2 - K8s Deployment
+- **C1** (172.16.1.196): Client
+- **C2** (172.16.2.136): Ordering, Inventory, Pricing, Analytics
+- **C3** (172.16.3.137): 5 Robots
+
+---
+
 ### Recompile Protobuf (if you modify grocery.proto)
 
 ```bash
