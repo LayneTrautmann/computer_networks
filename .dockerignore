@@ -1,6 +1,7 @@
-.DS_Store
 venv/
 __pycache__/
 *.pyc
+.git/
+.DS_Store
 analytics_service/analytics_data.csv
 analytics_service/plots/
