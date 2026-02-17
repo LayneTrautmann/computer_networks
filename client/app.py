@@ -3,12 +3,13 @@ Streamlit Client for Grocery Ordering and Restocking
 Sends HTTP/JSON requests to the Flask Ordering Service
 """
 
+import os
 import streamlit as st
 import requests
 import json
 
 # Configuration - Update this when connecting to the Ordering service
-ORDERING_SERVICE_URL = "http://localhost:5000"
+ORDERING_SERVICE_URL = os.environ.get("ORDERING_SERVICE_URL", "http://localhost:5000")
 
 # Available items per category
 ITEMS = {

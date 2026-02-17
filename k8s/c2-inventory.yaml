@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: team7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+    spec:
+      containers:
+      - name: inventory
+        image: 192.168.1.129:5000/team7/inventory:latest
+        ports:
+        - containerPort: 50051
+        - containerPort: 5556
+        env:
+        - name: PRICING_SERVICE_HOST
+          value: "pricing"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+  namespace: team7
+spec:
+  type: NodePort
+  selector:
+    app: inventory
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+    nodePort: 30051
+  - name: zmq-pub
+    port: 5556
+    targetPort: 5556
+    nodePort: 30556

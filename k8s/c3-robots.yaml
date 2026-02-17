@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-bread
+  namespace: team7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-bread
+  template:
+    metadata:
+      labels:
+        app: robot-bread
+    spec:
+      containers:
+      - name: robot-bread
+        image: 192.168.1.129:5000/team7/robot:latest
+        command: ["python", "robot_service/robot.py", "bread"]
+        env:
+        - name: INVENTORY_SERVICE_HOST
+          value: "172.16.2.136"
+        - name: INVENTORY_SERVICE_PORT
+          value: "30051"
+        - name: ZMQ_SUB_ADDRESS
+          value: "tcp://172.16.2.136:30556"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-dairy
+  namespace: team7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-dairy
+  template:
+    metadata:
+      labels:
+        app: robot-dairy
+    spec:
+      containers:
+      - name: robot-dairy
+        image: 192.168.1.129:5000/team7/robot:latest
+        command: ["python", "robot_service/robot.py", "dairy"]
+        env:
+        - name: INVENTORY_SERVICE_HOST
+          value: "172.16.2.136"
+        - name: INVENTORY_SERVICE_PORT
+          value: "30051"
+        - name: ZMQ_SUB_ADDRESS
+          value: "tcp://172.16.2.136:30556"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-meat
+  namespace: team7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-meat
+  template:
+    metadata:
+      labels:
+        app: robot-meat
+    spec:
+      containers:
+      - name: robot-meat
+        image: 192.168.1.129:5000/team7/robot:latest
+        command: ["python", "robot_service/robot.py", "meat"]
+        env:
+        - name: INVENTORY_SERVICE_HOST
+          value: "172.16.2.136"
+        - name: INVENTORY_SERVICE_PORT
+          value: "30051"
+        - name: ZMQ_SUB_ADDRESS
+          value: "tcp://172.16.2.136:30556"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-produce
+  namespace: team7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-produce
+  template:
+    metadata:
+      labels:
+        app: robot-produce
+    spec:
+      containers:
+      - name: robot-produce
+        image: 192.168.1.129:5000/team7/robot:latest
+        command: ["python", "robot_service/robot.py", "produce"]
+        env:
+        - name: INVENTORY_SERVICE_HOST
+          value: "172.16.2.136"
+        - name: INVENTORY_SERVICE_PORT
+          value: "30051"
+        - name: ZMQ_SUB_ADDRESS
+          value: "tcp://172.16.2.136:30556"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robot-party
+  namespace: team7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: robot-party
+  template:
+    metadata:
+      labels:
+        app: robot-party
+    spec:
+      containers:
+      - name: robot-party
+        image: 192.168.1.129:5000/team7/robot:latest
+        command: ["python", "robot_service/robot.py", "party"]
+        env:
+        - name: INVENTORY_SERVICE_HOST
+          value: "172.16.2.136"
+        - name: INVENTORY_SERVICE_PORT
+          value: "30051"
+        - name: ZMQ_SUB_ADDRESS
+          value: "tcp://172.16.2.136:30556"
