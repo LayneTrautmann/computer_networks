@@ -1,0 +1,68 @@
+# ContainerLab WAN Emulation Topology
+#
+# Inserts a "Hardware-in-the-Loop" (HIL) WAN emulation between K8s clusters:
+#   C1 (Client, 172.16.1.x)  <--WAN-->  C2 (Services, 172.16.2.x)
+#   C2 (Services, 172.16.2.x) <--WAN--> C3 (Robots, 172.16.3.x)
+#
+# Each WAN router pair applies tc-netem rules (delay, jitter, packet loss)
+# to realistically emulate wide-area network conditions.
+#
+# Prerequisites:
+#   - ContainerLab installed on the WAN emulation VM
+#   - VM has connectivity to all three cluster subnets
+#   - IP forwarding enabled: sysctl -w net.ipv4.ip_forward=1
+#
+# Deploy:   sudo clab deploy -t topology.clab.yml
+# Destroy:  sudo clab destroy -t topology.clab.yml
+# Inspect:  sudo clab inspect -t topology.clab.yml
+
+name: grocery-wan
+
+topology:
+  nodes:
+    # ── WAN link between C1 (Clients) and C2 (Core Services) ──────────────
+    wan-c1-c2-a:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 172.16.1.254/24 dev eth1
+        - ip addr add 10.0.1.1/30 dev eth2
+        - ip route add 172.16.2.0/24 via 10.0.1.2
+        - ip route add 172.16.3.0/24 via 10.0.1.2
+        - sysctl -w net.ipv4.ip_forward=1
+
+    wan-c1-c2-b:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 172.16.2.254/24 dev eth1
+        - ip addr add 10.0.1.2/30 dev eth2
+        - ip route add 172.16.1.0/24 via 10.0.1.1
+        - sysctl -w net.ipv4.ip_forward=1
+
+    # ── WAN link between C2 (Core Services) and C3 (Robots) ──────────────
+    wan-c2-c3-a:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 172.16.2.253/24 dev eth1
+        - ip addr add 10.0.2.1/30 dev eth2
+        - ip route add 172.16.3.0/24 via 10.0.2.2
+        - ip route add 172.16.1.0/24 via 10.0.2.2
+        - sysctl -w net.ipv4.ip_forward=1
+
+    wan-c2-c3-b:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip addr add 172.16.3.254/24 dev eth1
+        - ip addr add 10.0.2.2/30 dev eth2
+        - ip route add 172.16.2.0/24 via 10.0.2.1
+        - ip route add 172.16.1.0/24 via 10.0.2.1
+        - sysctl -w net.ipv4.ip_forward=1
+
+  links:
+    # Internal WAN backbone: C1-side router <-> C2-side router
+    - endpoints: ["wan-c1-c2-a:eth2", "wan-c1-c2-b:eth2"]
+    # Internal WAN backbone: C2-side router <-> C3-side router
+    - endpoints: ["wan-c2-c3-a:eth2", "wan-c2-c3-b:eth2"]

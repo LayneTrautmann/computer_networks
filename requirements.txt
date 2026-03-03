@@ -19,6 +19,7 @@ flatbuffers>=23.5.26
 # Analytics plotting
 matplotlib>=3.8.0
 pandas>=2.1.0
+numpy>=1.26.0
 
 # Load testing
 locust>=2.20.0

@@ -207,6 +207,166 @@ python -m grpc_tools.protoc -I./protos --python_out=./protos --grpc_python_out=.
 ---
 
 
+---
+
+## PA2 Milestone 3 – ContainerLab HIL & Tail Latency Experiments
+
+### Architecture
+
+```
+C1 (172.16.1.196)        ContainerLab WAN          C2 (172.16.2.136)         ContainerLab WAN          C3 (172.16.3.137)
+┌─────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐   ┌─────────────────────┐   ┌──────────────────┐
+│  Client          │    │  wan-c1-c2-a         │    │  Ordering Service    │   │  wan-c2-c3-a         │   │  Robot (bread)    │
+│  (Streamlit)     │◄──►│  (172.16.1.254)      │◄──►│  Inventory Service   │◄──►│  (172.16.2.253)      │◄──►│  Robot (dairy)    │
+│  Locust          │    │  wan-c1-c2-b         │    │  Pricing Service     │   │  wan-c2-c3-b         │   │  Robot (meat)     │
+│  (port 30501)    │    │  (172.16.2.254)      │    │  Analytics Service   │   │  (172.16.3.254)      │   │  Robot (produce)  │
+└─────────────────┘    └─────────────────────┘    └─────────────────────┘   └─────────────────────┘   │  Robot (party)    │
+                              tc netem                                             tc netem             └──────────────────┘
+                         delay/jitter/loss                                    delay/jitter/loss
+```
+
+### Step 1: Deploy ContainerLab Topology
+
+On the ContainerLab VM (must have ContainerLab installed):
+
+```bash
+cd containerlab/
+sudo clab deploy -t topology.clab.yml
+```
+
+Verify the topology is running:
+```bash
+sudo clab inspect -t topology.clab.yml
+```
+
+### Step 2: Configure Routes Through ContainerLab
+
+Run once to redirect inter-cluster traffic through the WAN emulation:
+
+```bash
+cd containerlab/
+chmod +x setup-routes.sh
+./setup-routes.sh
+```
+
+To remove the routes later (return to direct connectivity):
+```bash
+./teardown-routes.sh
+```
+
+### Step 3: Configure WAN Emulation Scenarios
+
+Apply different WAN characteristics using tc-netem:
+
+```bash
+cd containerlab/
+chmod +x configure-wan.sh
+
+# Available scenarios:
+./configure-wan.sh none      # Baseline – no emulation
+./configure-wan.sh low       # 10ms delay, 1ms jitter, 0.1% loss
+./configure-wan.sh medium    # 50ms delay, 5ms jitter, 0.5% loss
+./configure-wan.sh high      # 100ms delay, 10ms jitter, 1% loss
+./configure-wan.sh extreme   # 200ms delay, 25ms jitter, 2% loss
+
+# Custom values:
+DELAY=75 JITTER=8 LOSS=0.3 ./configure-wan.sh custom
+```
+
+### Step 4: Run Load Tests with Locust
+
+```bash
+# Web UI mode
+locust -f locustfile.py --host=http://172.16.2.136:30500
+
+# Headless with CSV export
+locust -f locustfile.py --host=http://172.16.2.136:30500 \
+    --headless -u 50 -r 5 -t 60s --csv=results
+
+# Different workload shapes (via env var):
+LOCUST_SHAPE=steady locust -f locustfile.py --host=http://172.16.2.136:30500
+LOCUST_SHAPE=burst  locust -f locustfile.py --host=http://172.16.2.136:30500
+LOCUST_SHAPE=ramp   locust -f locustfile.py --host=http://172.16.2.136:30500
+LOCUST_SHAPE=sine   locust -f locustfile.py --host=http://172.16.2.136:30500
+```
+
+Traffic mix: 80% refrigerator grocery orders, 20% truck restock orders.
+
+### Step 5: Run All Experiments Automatically
+
+The experiment runner script iterates through all WAN scenarios:
+
+```bash
+chmod +x run_experiments.sh
+./run_experiments.sh http://172.16.2.136:30500
+
+# Configure experiment parameters:
+LOCUST_USERS=50 LOCUST_SPAWN_RATE=5 LOCUST_DURATION=60s ./run_experiments.sh
+```
+
+This will:
+1. Run Locust under each WAN scenario (none, low, medium, high, extreme)
+2. Collect analytics CSVs into `analytics_service/scenarios/`
+3. Generate all plots including CDF comparisons
+
+### Step 6: Generate Plots
+
+```bash
+cd ~/computer_networks
+source venv/bin/activate
+pip install pandas matplotlib numpy
+
+# Generate all plots (basic + CDF + comparisons)
+python analytics_service/plot.py
+```
+
+Plots saved to `analytics_service/plots/`:
+- `latency_histogram.png` – Latency distribution
+- `latency_over_time.png` – Latency over time by order type
+- `latency_by_type.png` – Box plot by order type
+- `outcome_breakdown.png` – OK vs BAD_REQUEST counts
+- `summary_table.png` – Statistics summary with P90/P95/P99
+- `cdf_latency.png` – **CDF with P50/P90/P95/P99 markers**
+- `cdf_latency_by_type.png` – **CDF per order type**
+- `throughput_over_time.png` – Requests/sec over time
+- `cdf_comparison.png` – **CDF overlay of all WAN scenarios**
+- `percentile_bars.png` – **Grouped bar chart of tail latencies per scenario**
+- `comparison_summary.png` – **Table of P50/P90/P95/P99 across scenarios**
+- `locust_stats.png` – Locust response time & throughput (if CSV available)
+
+### Scenario Comparison
+
+To generate comparison plots manually, place experiment CSVs in `analytics_service/scenarios/`:
+
+```
+analytics_service/scenarios/
+├── no_containerlab.csv
+├── wan_10ms.csv
+├── wan_50ms.csv
+├── wan_100ms.csv
+└── wan_200ms.csv
+```
+
+Each CSV should have columns: `timestamp,order_id,order_type,status,latency_seconds`
+
+Then run:
+```bash
+SCENARIO_CSV_DIR=analytics_service/scenarios python analytics_service/plot.py
+```
+
+### Tear Down
+
+```bash
+# Remove routes
+cd containerlab/
+./teardown-routes.sh
+
+# Destroy ContainerLab topology
+sudo clab destroy -t topology.clab.yml
+```
+
+---
+
 ### Communication Flow
 
 ```
