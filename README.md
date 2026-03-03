@@ -1,4 +1,4 @@
-# Computer Networks - PA1
+# Computer Networks - PA1 & PA2
 
 ## Automated Grocery Ordering and Delivery Service
 
@@ -21,6 +21,7 @@ computer_networks/
 │   └── app.py                  # Flask ordering service
 ├── inventory_service/
 │   └── server.py               # gRPC inventory service
+├── locustfile.py               # Locust load testing workload
 ├── requirements.txt            # Python dependencies
 └── README.md
 ```
@@ -172,6 +173,31 @@ Plots are saved to analytics_service/plots/
 
 ---
 
+### Load Testing with Locust
+
+Locust generates HTTP workloads against the Ordering Service to measure tail latencies.
+
+**Run against K8s deployment (web UI):**
+```bash
+locust -f locustfile.py --host=http://172.16.2.136:30500
+```
+Then open `http://localhost:8089`, configure the number of users and spawn rate, and start the test.
+
+**Run locally:**
+```bash
+locust -f locustfile.py --host=http://localhost:5000
+```
+
+**Headless mode with CSV export:**
+```bash
+locust -f locustfile.py --host=http://172.16.2.136:30500 --headless -u 50 -r 5 -t 60s --csv=results
+```
+This produces `results_stats.csv`, `results_stats_history.csv`, etc. for analysis.
+
+Traffic mix: 80% refrigerator grocery orders (`/order/grocery`), 20% truck restock orders (`/order/restock`).
+
+---
+
 ### Recompile Protobuf (if you modify grocery.proto)
 
 ```bash
@@ -186,5 +212,8 @@ python -m grpc_tools.protoc -I./protos --python_out=./protos --grpc_python_out=.
 ```
 Streamlit Client  --(HTTP/JSON)-->  Flask Ordering  --(gRPC/Protobuf)-->  Inventory
 (port 8501)                         (port 5000)                           (port 50051)
+
+Locust            --(HTTP/JSON)-->  Flask Ordering  --(gRPC/Protobuf)-->  Inventory
+(port 8089 UI)                      (port 30500 K8s)                      (port 50051)
 ```
 
