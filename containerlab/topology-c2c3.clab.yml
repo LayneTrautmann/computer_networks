@@ -1,0 +1,33 @@
+# ContainerLab WAN Emulation Topology – C2 to C3 (Inventory → Robots)
+#
+# Architecture:
+#   vm2 socat (port 30051/30556) -> wan-router container (tc-netem on eth1) -> proxy container -> C3:30051/30556
+#
+# After deploying, run start-wan-c2c3.sh to start socat processes.
+#
+# Deploy:   sudo clab deploy -t topology-c2c3.clab.yml
+# Destroy:  sudo clab destroy -t topology-c2c3.clab.yml
+# Inspect:  sudo clab inspect -t topology-c2c3.clab.yml
+
+name: grocery-wan-c2c3
+
+topology:
+  nodes:
+    # WAN router: tc-netem delay applied on eth1 after deploy via configure-wan-c2c3.sh
+    wan-router:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - sysctl -w net.ipv4.ip_forward=1
+        - apk add -q socat iproute2
+
+    # Proxy: forwards traffic out to C3 robot service
+    proxy:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - apk add -q socat
+
+  links:
+    # Internal link: wan-router:eth1 <-> proxy:eth1 (tc-netem applied on wan-router:eth1)
+    - endpoints: ["wan-router:eth1", "proxy:eth1"]

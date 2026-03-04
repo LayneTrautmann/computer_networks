@@ -164,8 +164,6 @@ Plots are saved to analytics_service/plots/
 
 ---
 
----
-
 ## PA2 - K8s Deployment
 - **C1** (172.16.1.196): Client
 - **C2** (172.16.2.136): Ordering, Inventory, Pricing, Analytics
@@ -175,24 +173,18 @@ Plots are saved to analytics_service/plots/
 
 ### Load Testing with Locust
 
-Locust generates HTTP workloads against the Ordering Service to measure tail latencies.
+Locust generates HTTP workloads against the Ordering Service to measure tail latencies. Run from C1's master node (not from Mac — the Chameleon private network is not reachable externally).
 
-**Run against K8s deployment (web UI):**
+**Headless mode with CSV export (on C1 master):**
 ```bash
-locust -f locustfile.py --host=http://172.16.2.136:30500
-```
-Then open `http://localhost:8089`, configure the number of users and spawn rate, and start the test.
+cd ~/computer_networks
+source venv/bin/activate
 
-**Run locally:**
-```bash
-locust -f locustfile.py --host=http://localhost:5000
+locust -f locustfile.py --host=http://10.81.62.48:5000 \
+    --headless -u 10 -r 2 -t 60s \
+    --csv=analytics_service/scenarios/baseline
 ```
-
-**Headless mode with CSV export:**
-```bash
-locust -f locustfile.py --host=http://172.16.2.136:30500 --headless -u 50 -r 5 -t 60s --csv=results
-```
-This produces `results_stats.csv`, `results_stats_history.csv`, etc. for analysis.
+This produces `baseline_stats.csv`, `baseline_stats_history.csv`, etc. for analysis.
 
 Traffic mix: 80% refrigerator grocery orders (`/order/grocery`), 20% truck restock orders (`/order/restock`).
 
@@ -213,156 +205,143 @@ python -m grpc_tools.protoc -I./protos --python_out=./protos --grpc_python_out=.
 
 ### Architecture
 
+Traffic from C1 is steered through a ContainerLab WAN emulator running on vm1 (172.16.5.232) before reaching C2's ordering service. WAN impairment (delay/jitter/loss) is applied via `tc-netem` on the internal link between two Alpine containers.
+
 ```
-C1 (172.16.1.196)        ContainerLab WAN          C2 (172.16.2.136)         ContainerLab WAN          C3 (172.16.3.137)
-┌─────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐   ┌─────────────────────┐   ┌──────────────────┐
-│  Client          │    │  wan-c1-c2-a         │    │  Ordering Service    │   │  wan-c2-c3-a         │   │  Robot (bread)    │
-│  (Streamlit)     │◄──►│  (172.16.1.254)      │◄──►│  Inventory Service   │◄──►│  (172.16.2.253)      │◄──►│  Robot (dairy)    │
-│  Locust          │    │  wan-c1-c2-b         │    │  Pricing Service     │   │  wan-c2-c3-b         │   │  Robot (meat)     │
-│  (port 30501)    │    │  (172.16.2.254)      │    │  Analytics Service   │   │  (172.16.3.254)      │   │  Robot (produce)  │
-└─────────────────┘    └─────────────────────┘    └─────────────────────┘   └─────────────────────┘   │  Robot (party)    │
-                              tc netem                                             tc netem             └──────────────────┘
-                         delay/jitter/loss                                    delay/jitter/loss
+C1 cluster (172.16.1.196)
+  └─ client pod
+       └─ ordering-wan ClusterIP (K8s)
+            └─ EndpointSlice → vm1:30500
+                  └─ socat (vm1)
+                       └─ wan-router container (tc-netem on eth1)
+                            └─ proxy container (socat)
+                                 └─ C2 ordering service (172.16.2.136:30500)
 ```
+
+Locust runs on C1's master node and targets the C1 NodePort (`http://10.81.62.48:5000`) so that all traffic traverses the WAN emulator.
 
 ### Step 1: Deploy ContainerLab Topology
 
-On the ContainerLab VM (must have ContainerLab installed):
+SSH into vm1 (172.16.5.232):
 
 ```bash
-cd containerlab/
+ssh cc@172.16.5.232   # This should be set up in your .config using the bastion_s26 and the private key
+
+cd ~/computer_networks/containerlab
 sudo clab deploy -t topology.clab.yml
+sudo clab inspect -t topology.clab.yml   # verify containers are running
 ```
 
-Verify the topology is running:
+### Step 2: Start socat Relay Chain
+
+After the topology is deployed, start the socat relay chain:
+
 ```bash
-sudo clab inspect -t topology.clab.yml
+cd ~/computer_networks/containerlab
+chmod +x start-wan.sh
+./start-wan.sh
 ```
 
-### Step 2: Configure Routes Through ContainerLab
+This script:
+1. Gets the management IPs of `wan-router` and `proxy` containers
+2. Kills any existing socat processes
+3. Starts socat in `proxy` → C2 (172.16.2.136:30500)
+4. Starts socat in `wan-router` → proxy
+5. Starts socat on vm1 → wan-router
+6. Tests the chain with a health check
 
-Run once to redirect inter-cluster traffic through the WAN emulation:
+### Step 3: Apply K8s EndpointSlice on C1
+
+On C1's master node, redirect the client pod's traffic through vm1:
 
 ```bash
-cd containerlab/
-chmod +x setup-routes.sh
-./setup-routes.sh
+kubectl apply -f k8s/c1-wan-endpoint.yaml -n team7
 ```
 
-To remove the routes later (return to direct connectivity):
+This creates a `ordering-wan` ClusterIP service and EndpointSlice pointing to `172.16.5.232:30500` (vm1). The client pod uses `ORDERING_SERVICE_URL=http://ordering-wan:5000`.
+
+To remove (return to direct C1→C2):
 ```bash
-./teardown-routes.sh
+kubectl delete -f k8s/c1-wan-endpoint.yaml -n team7
 ```
 
-### Step 3: Configure WAN Emulation Scenarios
+### Step 4: Configure WAN Emulation Scenarios
 
-Apply different WAN characteristics using tc-netem:
+On vm1, apply different WAN impairment levels with tc-netem:
 
 ```bash
-cd containerlab/
+cd ~/computer_networks/containerlab
 chmod +x configure-wan.sh
 
-# Available scenarios:
-./configure-wan.sh none      # Baseline – no emulation
+./configure-wan.sh none      # Baseline – no emulation (ContainerLab only)
 ./configure-wan.sh low       # 10ms delay, 1ms jitter, 0.1% loss
 ./configure-wan.sh medium    # 50ms delay, 5ms jitter, 0.5% loss
 ./configure-wan.sh high      # 100ms delay, 10ms jitter, 1% loss
 ./configure-wan.sh extreme   # 200ms delay, 25ms jitter, 2% loss
-
-# Custom values:
-DELAY=75 JITTER=8 LOSS=0.3 ./configure-wan.sh custom
 ```
 
-### Step 4: Run Load Tests with Locust
+### Step 5: Run Load Tests with Locust
+
+On C1's master node (must be run from the cluster, not from Mac):
 
 ```bash
-# Web UI mode
-locust -f locustfile.py --host=http://172.16.2.136:30500
+cd ~/computer_networks
+source venv/bin/activate   # or: python3 -m venv venv && source venv/bin/activate && pip install locust
 
-# Headless with CSV export
-locust -f locustfile.py --host=http://172.16.2.136:30500 \
-    --headless -u 50 -r 5 -t 60s --csv=results
-
-# Different workload shapes (via env var):
-LOCUST_SHAPE=steady locust -f locustfile.py --host=http://172.16.2.136:30500
-LOCUST_SHAPE=burst  locust -f locustfile.py --host=http://172.16.2.136:30500
-LOCUST_SHAPE=ramp   locust -f locustfile.py --host=http://172.16.2.136:30500
-LOCUST_SHAPE=sine   locust -f locustfile.py --host=http://172.16.2.136:30500
+# Headless with CSV export – saves to analytics_service/scenarios/
+locust -f locustfile.py --host=http://10.81.62.48:5000 \
+    --headless -u 10 -r 2 -t 60s \
+    --csv=analytics_service/scenarios/none
 ```
 
-Traffic mix: 80% refrigerator grocery orders, 20% truck restock orders.
+Replace `none` with the scenario name (`low`, `medium`, `high`, `extreme`) to match the WAN setting applied in Step 4.
 
-### Step 5: Run All Experiments Automatically
+Traffic mix: 80% refrigerator grocery orders (`/order/grocery`), 20% truck restock orders (`/order/restock`).
 
-The experiment runner script iterates through all WAN scenarios:
+### Step 6: Collect All Scenarios
 
-```bash
-chmod +x run_experiments.sh
-./run_experiments.sh http://172.16.2.136:30500
+Run Steps 4 and 5 for each scenario in sequence. Resulting CSVs:
 
-# Configure experiment parameters:
-LOCUST_USERS=50 LOCUST_SPAWN_RATE=5 LOCUST_DURATION=60s ./run_experiments.sh
+```
+analytics_service/scenarios/
+├── none_stats.csv
+├── low_stats.csv
+├── medium_stats.csv
+├── high_stats.csv
+└── extreme_stats.csv
 ```
 
-This will:
-1. Run Locust under each WAN scenario (none, low, medium, high, extreme)
-2. Collect analytics CSVs into `analytics_service/scenarios/`
-3. Generate all plots including CDF comparisons
+### Step 7: Generate Plots
 
-### Step 6: Generate Plots
+On your local machine (Mac):
 
 ```bash
 cd ~/computer_networks
 source venv/bin/activate
 pip install pandas matplotlib numpy
 
-# Generate all plots (basic + CDF + comparisons)
-python analytics_service/plot.py
+python analytics_service/plot_locust.py
 ```
 
 Plots saved to `analytics_service/plots/`:
-- `latency_histogram.png` – Latency distribution
-- `latency_over_time.png` – Latency over time by order type
-- `latency_by_type.png` – Box plot by order type
-- `outcome_breakdown.png` – OK vs BAD_REQUEST counts
-- `summary_table.png` – Statistics summary with P90/P95/P99
-- `cdf_latency.png` – **CDF with P50/P90/P95/P99 markers**
-- `cdf_latency_by_type.png` – **CDF per order type**
-- `throughput_over_time.png` – Requests/sec over time
-- `cdf_comparison.png` – **CDF overlay of all WAN scenarios**
-- `percentile_bars.png` – **Grouped bar chart of tail latencies per scenario**
-- `comparison_summary.png` – **Table of P50/P90/P95/P99 across scenarios**
-- `locust_stats.png` – Locust response time & throughput (if CSV available)
-
-### Scenario Comparison
-
-To generate comparison plots manually, place experiment CSVs in `analytics_service/scenarios/`:
-
-```
-analytics_service/scenarios/
-├── no_containerlab.csv
-├── wan_10ms.csv
-├── wan_50ms.csv
-├── wan_100ms.csv
-└── wan_200ms.csv
-```
-
-Each CSV should have columns: `timestamp,order_id,order_type,status,latency_seconds`
-
-Then run:
-```bash
-SCENARIO_CSV_DIR=analytics_service/scenarios python analytics_service/plot.py
-```
+- `wan_percentile_bars.png` – Grouped bar chart of P50/P90/P95/P99 across scenarios
+- `wan_summary_table.png` – Summary table with request counts, mean, and percentiles
+- `wan_latency_trend.png` – Line chart showing latency trend across scenarios
 
 ### Tear Down
 
-```bash
-# Remove routes
-cd containerlab/
-./teardown-routes.sh
+On vm1:
 
-# Destroy ContainerLab topology
+```bash
+cd ~/computer_networks/containerlab
 sudo clab destroy -t topology.clab.yml
+pkill socat 2>/dev/null || true
+```
+
+On C1:
+
+```bash
+kubectl delete -f k8s/c1-wan-endpoint.yaml -n team7
 ```
 
 ---
@@ -370,10 +349,12 @@ sudo clab destroy -t topology.clab.yml
 ### Communication Flow
 
 ```
-Streamlit Client  --(HTTP/JSON)-->  Flask Ordering  --(gRPC/Protobuf)-->  Inventory
-(port 8501)                         (port 5000)                           (port 50051)
-
-Locust            --(HTTP/JSON)-->  Flask Ordering  --(gRPC/Protobuf)-->  Inventory
-(port 8089 UI)                      (port 30500 K8s)                      (port 50051)
+Locust (C1 master)  --(HTTP)-->  C1 client NodePort (10.81.62.48:5000)
+  └─ ordering-wan ClusterIP  →  vm1:30500 (socat)
+       └─ wan-router container (tc-netem delay/jitter/loss on eth1)
+            └─ proxy container (socat)
+                 └─ C2 ordering NodePort (172.16.2.136:30500)
+                      └─ gRPC  →  Inventory (C2)
+                           └─ ZMQ  →  Robots (C3)
 ```
 

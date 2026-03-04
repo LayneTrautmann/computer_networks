@@ -1,0 +1,45 @@
+# EndpointSlice on C2 to redirect robot traffic through vm2 ContainerLab WAN
+#
+# Robots on C3 connect outbound to C2 inventory (gRPC:30051, ZMQ:30556).
+# We intercept by pointing robots at vm2 (172.16.5.8) instead of C2 directly.
+# vm2 socat relays through the ContainerLab WAN topology back to C2.
+#
+# Apply on C3 master: kubectl apply -f k8s/c2-wan-endpoint.yaml -n team7
+# Then restart robot pods: kubectl rollout restart deployment/robot-bread ... -n team7
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-wan
+  namespace: team7
+spec:
+  type: ClusterIP
+  ports:
+  - name: grpc
+    port: 50051
+    protocol: TCP
+    targetPort: 30051
+  - name: zmq-pub
+    port: 5556
+    protocol: TCP
+    targetPort: 30556
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: inventory-wan
+  namespace: team7
+  labels:
+    kubernetes.io/service-name: inventory-wan
+addressType: IPv4
+ports:
+- name: grpc
+  protocol: TCP
+  port: 30051
+- name: zmq-pub
+  protocol: TCP
+  port: 30556
+endpoints:
+- addresses:
+  - "172.16.5.8"
