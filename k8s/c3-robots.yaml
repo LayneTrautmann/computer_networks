@@ -19,11 +19,11 @@ spec:
         command: ["python", "robot_service/robot.py", "bread"]
         env:
         - name: INVENTORY_SERVICE_HOST
-          value: "172.16.5.8"
+          value: "172.16.2.136"
         - name: INVENTORY_SERVICE_PORT
           value: "30051"
         - name: ZMQ_SUB_ADDRESS
-          value: "tcp://172.16.5.8:30556"
+          value: "tcp://172.16.2.136:30556"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,11 +46,11 @@ spec:
         command: ["python", "robot_service/robot.py", "dairy"]
         env:
         - name: INVENTORY_SERVICE_HOST
-          value: "172.16.5.8"
+          value: "172.16.2.136"
         - name: INVENTORY_SERVICE_PORT
           value: "30051"
         - name: ZMQ_SUB_ADDRESS
-          value: "tcp://172.16.5.8:30556"
+          value: "tcp://172.16.2.136:30556"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -73,11 +73,11 @@ spec:
         command: ["python", "robot_service/robot.py", "meat"]
         env:
         - name: INVENTORY_SERVICE_HOST
-          value: "172.16.5.8"
+          value: "172.16.2.136"
         - name: INVENTORY_SERVICE_PORT
           value: "30051"
         - name: ZMQ_SUB_ADDRESS
-          value: "tcp://172.16.5.8:30556"
+          value: "tcp://172.16.2.136:30556"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -100,11 +100,11 @@ spec:
         command: ["python", "robot_service/robot.py", "produce"]
         env:
         - name: INVENTORY_SERVICE_HOST
-          value: "172.16.5.8"
+          value: "172.16.2.136"
         - name: INVENTORY_SERVICE_PORT
           value: "30051"
         - name: ZMQ_SUB_ADDRESS
-          value: "tcp://172.16.5.8:30556"
+          value: "tcp://172.16.2.136:30556"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -127,8 +127,8 @@ spec:
         command: ["python", "robot_service/robot.py", "party"]
         env:
         - name: INVENTORY_SERVICE_HOST
-          value: "172.16.5.8"
+          value: "172.16.2.136"
         - name: INVENTORY_SERVICE_PORT
           value: "30051"
         - name: ZMQ_SUB_ADDRESS
-          value: "tcp://172.16.5.8:30556"
+          value: "tcp://172.16.2.136:30556"
