@@ -205,20 +205,24 @@ python -m grpc_tools.protoc -I./protos --python_out=./protos --grpc_python_out=.
 
 ### Architecture
 
-Traffic from C1 is steered through a ContainerLab WAN emulator running on vm1 (172.16.5.232) before reaching C2's ordering service. WAN impairment (delay/jitter/loss) is applied via `tc-netem` on the internal link between two Alpine containers.
+Two ContainerLab HIL topologies are deployed — one on vm1 (C1→C2 path) and one on vm2 (C2→C3 path):
 
 ```
 C1 cluster (172.16.1.196)
   └─ client pod
-       └─ ordering-wan ClusterIP (K8s)
-            └─ EndpointSlice → vm1:30500
-                  └─ socat (vm1)
-                       └─ wan-router container (tc-netem on eth1)
-                            └─ proxy container (socat)
-                                 └─ C2 ordering service (172.16.2.136:30500)
+       └─ ordering-wan ClusterIP (K8s EndpointSlice)
+            └─ vm1 (172.16.5.232) socat :30500
+                 └─ wan-router container (tc-netem on eth1)
+                      └─ proxy container (socat)
+                           └─ C2 ordering NodePort (172.16.2.136:30500)
+                                └─ gRPC → Inventory (C2)
+                                     └─ ZMQ → vm2 (172.16.5.8) socat :30556
+                                          └─ wan-router container (tc-netem on eth1)
+                                               └─ proxy container (socat)
+                                                    └─ C3 robots NodePort (172.16.3.137:30556)
 ```
 
-Locust runs on C1's master node and targets the C1 NodePort (`http://10.81.62.48:5000`) so that all traffic traverses the WAN emulator.
+Locust runs on C1's master node and targets the C1 NodePort (`http://10.81.62.48:5000`) so that all traffic traverses both WAN emulators.
 
 ### Step 1: Deploy ContainerLab Topology
 
@@ -264,6 +268,21 @@ To remove (return to direct C1→C2):
 ```bash
 kubectl delete -f k8s/c1-wan-endpoint.yaml -n team7
 ```
+
+### Step 3b: Deploy ContainerLab Topology on vm2 (C2→C3 path)
+
+SSH into vm2 (172.16.5.8):
+
+```bash
+ssh cc@172.16.5.8   # requires bastion_s26 ProxyJump configured in ~/.ssh/config
+
+cd ~/computer_networks/containerlab
+sudo clab deploy -t topology-c2c3.clab.yml
+sudo clab inspect -t topology-c2c3.clab.yml
+chmod +x start-wan-c2c3.sh && ./start-wan-c2c3.sh
+```
+
+This sets up a socat relay chain on vm2 for both gRPC (port 30051) and ZMQ (port 30556) traffic between C2 and C3 robots.
 
 ### Step 4: Configure WAN Emulation Scenarios
 
@@ -331,15 +350,20 @@ Plots saved to `analytics_service/plots/`:
 ### Tear Down
 
 On vm1:
-
 ```bash
 cd ~/computer_networks/containerlab
 sudo clab destroy -t topology.clab.yml
-pkill socat 2>/dev/null || true
+sudo pkill socat 2>/dev/null || true
+```
+
+On vm2:
+```bash
+cd ~/computer_networks/containerlab
+sudo clab destroy -t topology-c2c3.clab.yml
+sudo pkill socat 2>/dev/null || true
 ```
 
 On C1:
-
 ```bash
 kubectl delete -f k8s/c1-wan-endpoint.yaml -n team7
 ```
