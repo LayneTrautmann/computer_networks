@@ -22,12 +22,9 @@ set -euo pipefail
 SCENARIO="${1:-none}"
 
 CONTAINERS=(
-    "clab-grocery-wan-wan-c1-c2-a"
-    "clab-grocery-wan-wan-c1-c2-b"
-    "clab-grocery-wan-wan-c2-c3-a"
-    "clab-grocery-wan-wan-c2-c3-b"
+    "clab-grocery-wan-wan-router"
 )
-IFACE="eth2"
+IFACE="eth1"
 
 apply_netem() {
     local delay="$1" jitter="$2" loss="$3"
