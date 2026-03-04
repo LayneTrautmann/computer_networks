@@ -20,7 +20,7 @@ spec:
         - containerPort: 8501
         env:
         - name: ORDERING_SERVICE_URL
-          value: "http://172.16.2.136:30500"
+          value: "http://ordering-wan:5000"
 ---
 apiVersion: v1
 kind: Service

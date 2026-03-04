@@ -1,0 +1,35 @@
+# EndpointSlice to steer C1 ordering traffic through ContainerLab WAN (team7-vm1)
+#
+# Creates a K8s Service "ordering-wan" on C1 that transparently redirects
+# traffic to vm1 (172.16.5.232:30500) where socat feeds it into ContainerLab.
+#
+# Apply (with ContainerLab):  kubectl apply -f c1-wan-endpoint.yaml -n team7
+# Remove (direct to C2):      kubectl delete -f c1-wan-endpoint.yaml -n team7
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ordering-wan
+  namespace: team7
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 5000
+    protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: ordering-wan
+  namespace: team7
+  labels:
+    kubernetes.io/service-name: ordering-wan
+addressType: IPv4
+ports:
+- name: http
+  protocol: TCP
+  port: 30500
+endpoints:
+- addresses:
+  - "172.16.5.232"

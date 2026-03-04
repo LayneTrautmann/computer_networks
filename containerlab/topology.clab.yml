@@ -1,9 +1,9 @@
 # ContainerLab WAN Emulation Topology
 #
 # Architecture:
-#   External traffic enters vm1 via socat on port 30500
-#   -> wan-router (Alpine, applies tc-netem WAN delay on eth1)
-#   -> proxy (nginx, forwards to C2 ordering service)
+#   vm1 socat (port 30500) -> wan-router container (tc-netem on eth1) -> proxy container -> C2:30500
+#
+# After deploying, run start-wan.sh to start socat processes and apply tc-netem.
 #
 # Deploy:   sudo clab deploy -t topology.clab.yml
 # Destroy:  sudo clab destroy -t topology.clab.yml
@@ -13,20 +13,21 @@ name: grocery-wan
 
 topology:
   nodes:
-    # WAN router: applies tc-netem delay on eth1 (the link to proxy)
+    # WAN router: tc-netem delay applied on eth1 after deploy via configure-wan.sh
     wan-router:
       kind: linux
       image: alpine:latest
       exec:
         - sysctl -w net.ipv4.ip_forward=1
+        - apk add -q socat iproute2
 
-    # Proxy: nginx reverse proxy that forwards traffic to C2 ordering service
+    # Proxy: forwards traffic out to C2 ordering service
     proxy:
       kind: linux
-      image: nginx:alpine
+      image: alpine:latest
       exec:
-        - sh -c "printf 'server {\n  listen 5000;\n  location / {\n    proxy_pass http://172.16.2.136:30500;\n  }\n}\n' > /etc/nginx/conf.d/ordering.conf && nginx -g 'daemon off;' &"
+        - apk add -q socat
 
   links:
-    # Internal link between wan-router and proxy (tc-netem applied here)
+    # Internal link: wan-router:eth1 <-> proxy:eth1 (tc-netem applied on wan-router:eth1)
     - endpoints: ["wan-router:eth1", "proxy:eth1"]
