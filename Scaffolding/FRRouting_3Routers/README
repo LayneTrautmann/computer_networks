@@ -1,0 +1,51 @@
+Purpose
+--------
+This directory comprises a 3 router topology. Some links have asymmetric
+weights i.e., directed edges with different costs. Each router is also
+attached to its LAN comprising one PC each.
+
+For this scaffolding code, we enable OSPF (which uses the link state
+routing algorithm based on Dijkstra's shortest path)
+
+The lab itself is described in the frrlab.clab.yml file. It uses
+all linux kind nodes. The routers run the FRR image while the
+user end-devices run a small Alpine Linux-based image that has
+numerous networking utilities pre-installed.
+
+Directory structure
+--------------------
+Each router directory has two files:
+  daemons: this enables the routing daemons we need for this
+           scaffolding (zebra and ospf)
+  frr.conf: has substantial number of details on the configuration
+            of that router including all its interfaces and link
+            weights. Please study carefully.
+  
+To make the shell scripts provided in this directory executable,
+run "chmod u+x *.sh"
+
+Running the lab and Experimenting
+---------------------------------
+To run the lab, execute "./run.sh"
+
+You can view routing tables at each PC or router as follows:
+
+docker exec -it <container name> route -n
+  where container name is something like  clab-frrlab-router1
+
+You can check if your packet will take the shortest path or not
+using the following command:
+
+docker exec -it clab-frrlab-pc1 traceroute 172.16.2.2
+(here, although there is a direct connection from router 1 to
+router 2, the route taken will take us from PC1 to router 1 to
+router 3 to router 2 to PC2 because that is shortest path)
+
+Terminating
+-----------
+To terminate the lab, execute "./cleanup.sh"
+
+Additional Experimentation
+--------------------------
+feel free to change the weights; add new routers; remove
+any link etc and get a feel for the way everything works.

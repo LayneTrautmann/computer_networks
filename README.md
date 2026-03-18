@@ -1,4 +1,4 @@
-# Computer Networks - PA1 & PA2
+# Computer Networks - PA1, PA2 & PA3
 
 ## Automated Grocery Ordering and Delivery Service
 
@@ -366,6 +366,39 @@ sudo pkill socat 2>/dev/null || true
 On C1:
 ```bash
 kubectl delete -f k8s/c1-wan-endpoint.yaml -n team7
+```
+
+---
+
+## PA3 – ContainerLab 1: WAN with OSPF Routing
+
+### Deploy (on team7-vm1)
+
+```bash
+cd ~/computer_networks/containerlab1
+chmod +x *.sh
+./run.sh
+```
+
+### Verify OSPF shortest path
+
+```bash
+sudo docker exec -it clab-pa3-wan-lan1-host traceroute 10.4.0.2
+# should be path that gives cost 80
+```
+
+### Collect routing tables (run for router1 through router6)
+
+```bash
+sudo docker exec -it clab-pa3-wan-router1 vtysh -c "show ip route"
+sudo docker exec -it clab-pa3-wan-router1 vtysh -c "show ip ospf neighbor"
+sudo docker exec -it clab-pa3-wan-router1 vtysh -c "show ip ospf database"
+```
+
+### Tear down
+
+```bash
+./cleanup.sh
 ```
 
 ---

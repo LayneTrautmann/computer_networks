@@ -1,0 +1,38 @@
+# topology documentation: http://containerlab.dev/lab-examples/srl-ceos/
+# Modified to use multiple nodes to be Nokia SR-Linux and a Linux host
+name: srlcomplex-whost
+
+# say we have 5 nodes with some degree of connectivity
+topology:
+  nodes:
+    node1:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    node2:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    node3:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    node4:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    node5:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    host1:
+      kind: linux
+      image: nicolaka/netshoot  # this has iperf3 pre installed
+
+  links:
+    # Documentation of Nokia SR Linux says that it has only one interface 
+    # but can have multiple ports
+    # Also note that the Linux container uses traditional names for the
+    # interfaces like eth1, eth2 etc
+    - endpoints: ["node1:ethernet-1/1", "node2:ethernet-1/1"]
+    - endpoints: ["node1:ethernet-1/2", "node3:ethernet-1/1"]
+    - endpoints: ["node2:ethernet-1/2", "node4:ethernet-1/1"]
+    - endpoints: ["node2:ethernet-1/3", "node5:ethernet-1/1"]
+    - endpoints: ["node3:ethernet-1/2", "node4:ethernet-1/2"]
+    - endpoints: ["node4:ethernet-1/3", "node5:ethernet-1/2"]
+    - endpoints: ["node5:ethernet-1/3", "host1:eth1"]

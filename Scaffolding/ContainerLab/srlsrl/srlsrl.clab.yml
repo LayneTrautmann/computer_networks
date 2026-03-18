@@ -1,0 +1,15 @@
+# topology documentation: http://containerlab.dev/lab-examples/srl-ceos/
+# Modified to use both nodes to be Nokia SR-Linux
+name: srlsrl
+
+topology:
+  nodes:
+    node1:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    node2:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+
+  links:
+    - endpoints: ["node1:ethernet-1/1", "node2:ethernet-1/1"]

@@ -1,0 +1,61 @@
+# Simple 3 router topology, each having a PC attached to it
+# Adapted from existing example with additional details.
+name: frrlab
+
+# To enable us to spawn several routers on our VM, which may not
+# be feasible using Nokia SR-Linux, we will be using the "linux"
+# kind and spawning a container that uses the Free Range Router (FRR)
+# s/w stack. FRR is an open source framework that has implementation
+# of several different kinds of routing algorithms. When spawning the
+# routers, we also provide their configurations by binding the
+# configuration file from local directory that gets copied to the
+# appropriate folder inside the Docker container executing that router
+# logic. The daemons file provides basic parameters and describes which
+# routing logic will be enabled (we use Zebra and OSPF). The *.conf
+# file has all the router configuration like its interfaces, its IP
+# link cost, etc
+topology:
+  nodes:
+    router1:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - router1/daemons:/etc/frr/daemons
+        - router1/frr.conf:/etc/frr/frr.conf
+
+    router2:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - router2/daemons:/etc/frr/daemons
+        - router2/frr.conf:/etc/frr/frr.conf
+
+    router3:
+      kind: linux
+      image: quay.io/frrouting/frr:10.5.1
+      binds:
+        - router3/daemons:/etc/frr/daemons
+        - router3/frr.conf:/etc/frr/frr.conf
+
+    pc1:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+    pc2:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+    pc3:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+  links:
+    - endpoints: ["router1:eth1", "router2:eth1"]
+    # IP address assignment is not possible for
+    # Linux kind. It only works for Nokia SR Linux
+    #  ipv4: ["10.0.10.1/24", "10.0.10.2/24"]
+    - endpoints: [ "router1:eth2", "router3:eth1"]
+    - endpoints: [ "router2:eth2", "router3:eth2"]
+    - endpoints: ["pc1:eth1", "router1:eth3"]
+    - endpoints: ["pc2:eth1", "router2:eth3"]
+    - endpoints: ["pc3:eth1", "router3:eth3"]

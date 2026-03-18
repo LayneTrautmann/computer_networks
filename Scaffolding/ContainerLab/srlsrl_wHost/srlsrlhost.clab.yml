@@ -1,0 +1,24 @@
+# topology documentation: http://containerlab.dev/lab-examples/srl-ceos/
+# Modified to use both nodes to be Nokia SR-Linux and a Linux host
+name: srlsrl_whost
+
+topology:
+  nodes:
+    node1:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    node2:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux:latest
+    host1:
+      kind: linux
+      image: nicolaka/netshoot  # this has iperf3 pre installed
+
+  links:
+    - endpoints: ["node1:ethernet-1/1", "node2:ethernet-1/1"]
+    # Note that we already consumed the first port on node 2 above
+    # So, now we use the second one. Documentation of Nokia SR Linux
+    # says that it has only one interface but can have multiple ports
+    # Also note that the Linux container uses traditional names for the
+    # interfaces like eth1, eth2 etc
+    - endpoints: ["node2:ethernet-1/2", "host1:eth1"]
