@@ -1,0 +1,112 @@
+# PA3 ContainerLab 2 – Bridged LAN Topology
+#
+# 5 Linux bridges with STP, 5 robot hosts, 1 entry host (from K8s Cluster 2).
+# All hosts share subnet 192.168.100.0/24 (single L2 broadcast domain).
+#
+# Topology (2 cycles):
+#
+#       lan2-host            robot-dairy
+#            |                    |
+#  robot-bread -- BR1 -------- BR2
+#                  |              |
+#                  |              |
+#  robot-meat --- BR3 -------- BR4 -- robot-produce
+#                  |              |
+#                  +---- BR5 ----+
+#                         |
+#                    robot-party
+#
+# Cycle 1: BR1 - BR2 - BR4 - BR3 - BR1
+# Cycle 2: BR3 - BR4 - BR5 - BR3
+#
+# STP costs (bridge-to-bridge links):
+#   BR1-BR2: 10    BR1-BR3: 20    BR2-BR4: 15
+#   BR3-BR4: 25    BR3-BR5: 10    BR4-BR5: 30
+#
+# With BR1 as root (lowest priority), the spanning tree is:
+#   BR1--BR2--BR4    BR1--BR3--BR5
+# Blocked links: BR3-BR4 (cost 25) and BR4-BR5 (cost 30)
+#
+# Deploy:  sudo clab deploy -t bridgelab.clab.yml
+# Destroy: sudo clab destroy -t bridgelab.clab.yml
+
+name: pa3-bridged-lans
+
+topology:
+  nodes:
+    # ── Bridges ──────────────────────────────────────────────
+    br1:
+      kind: linux
+      image: alpine:latest
+
+    br2:
+      kind: linux
+      image: alpine:latest
+
+    br3:
+      kind: linux
+      image: alpine:latest
+
+    br4:
+      kind: linux
+      image: alpine:latest
+
+    br5:
+      kind: linux
+      image: alpine:latest
+
+    # ── Hosts ────────────────────────────────────────────────
+    # Entry point: traffic from K8s Cluster 2 enters here
+    lan2-host:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+    # Robot proxies (one per aisle, scattered across LANs)
+    robot-bread:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+    robot-dairy:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+    robot-meat:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+    robot-produce:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+    robot-party:
+      kind: linux
+      image: wbitt/network-multitool:extra
+
+  links:
+    # ── Bridge-to-bridge links (6 links, 2 cycles) ──────────
+    # BR1 ↔ BR2  (STP cost 10)
+    - endpoints: ["br1:eth1", "br2:eth1"]
+    # BR1 ↔ BR3  (STP cost 20)
+    - endpoints: ["br1:eth2", "br3:eth1"]
+    # BR2 ↔ BR4  (STP cost 15)
+    - endpoints: ["br2:eth2", "br4:eth1"]
+    # BR3 ↔ BR4  (STP cost 25)  ← closes cycle 1
+    - endpoints: ["br3:eth2", "br4:eth2"]
+    # BR3 ↔ BR5  (STP cost 10)
+    - endpoints: ["br3:eth3", "br5:eth1"]
+    # BR4 ↔ BR5  (STP cost 30)  ← closes cycle 2
+    - endpoints: ["br4:eth3", "br5:eth2"]
+
+    # ── Host-to-bridge links ─────────────────────────────────
+    # lan2-host on BR1
+    - endpoints: ["lan2-host:eth1", "br1:eth3"]
+    # robot-bread on BR1
+    - endpoints: ["robot-bread:eth1", "br1:eth4"]
+    # robot-dairy on BR2
+    - endpoints: ["robot-dairy:eth1", "br2:eth3"]
+    # robot-meat on BR3
+    - endpoints: ["robot-meat:eth1", "br3:eth4"]
+    # robot-produce on BR4
+    - endpoints: ["robot-produce:eth1", "br4:eth4"]
+    # robot-party on BR5
+    - endpoints: ["robot-party:eth1", "br5:eth3"]
