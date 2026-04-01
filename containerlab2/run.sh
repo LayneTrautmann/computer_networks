@@ -24,4 +24,7 @@ done
 
 echo ""
 echo "=== Deployment complete ==="
-echo "Run ./collect-tables.sh to see bridge/STP/ARP state."
+echo "Next steps:"
+echo "  1. ./collect-tables.sh     — inspect STP, MAC tables, ARP tables"
+echo "  2. ./start-relay.sh        — start socat relay for K8s traffic through bridges"
+echo "  3. kubectl apply -f ../k8s/c3-robots-bridged.yaml -n team7  — point robots at bridged LAN"
