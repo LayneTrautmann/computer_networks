@@ -5,7 +5,7 @@
 set -euo pipefail
 
 C3_ORDERING="172.16.3.137:30500"
-LISTEN_PORT=30501
+LISTEN_PORT=30502
 
 LAN1_HOST_IP=$(sudo docker inspect clab-pa4-backup-wan-lan1-host \
     --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' \
@@ -18,7 +18,7 @@ echo "lan1-host IP: $LAN1_HOST_IP"
 echo "lan2-host IP: $LAN2_HOST_IP"
 
 # Kill any existing socat on port 30501
-pkill -f "socat.*30501" 2>/dev/null || true
+pkill -f "socat.*30502" 2>/dev/null || true
 sudo docker exec clab-pa4-backup-wan-lan1-host pkill -9 socat 2>/dev/null || true
 sudo docker exec clab-pa4-backup-wan-lan2-host pkill -9 socat 2>/dev/null || true
 sleep 1
