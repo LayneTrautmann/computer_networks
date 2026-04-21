@@ -1,0 +1,31 @@
+# EndpointSlice to steer C1 traffic through backup WAN (containerlab3) to C3
+# Apply to switch to backup:  kubectl apply -f c1-backup-endpoint.yaml -n team7
+# Remove to revert to primary: kubectl delete -f c1-backup-endpoint.yaml -n team7
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ordering-backup
+  namespace: team7
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 5000
+    protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: ordering-backup
+  namespace: team7
+  labels:
+    kubernetes.io/service-name: ordering-backup
+addressType: IPv4
+ports:
+- name: http
+  protocol: TCP
+  port: 30501
+endpoints:
+- addresses:
+  - "172.16.5.232"
