@@ -415,3 +415,90 @@ Locust (C1 master)  --(HTTP)-->  C1 client NodePort (10.81.62.48:5000)
                            └─ ZMQ  →  Robots (C3)
 ```
 
+---
+
+## PA4 – Network Policy, WAN Impairments, and Traffic Steering
+
+### Overview
+
+- K8s Cluster 1: clients (primary traffic source)
+- K8s Cluster 2: ordering, inventory, pricing (primary backend)
+- K8s Cluster 3: ordering, inventory, pricing + robots (backup backend)
+- ContainerLab 1 (`containerlab1/`): primary WAN, C1 → C2
+- ContainerLab 3 (`containerlab3/`): backup WAN, C1 → C3
+
+### Milestone 1 – Network Policy
+
+Apply a policy so only team7 pods can talk to each other on C1:
+
+```bash
+kubectl apply -f k8s/team7-network-policy.yaml -n team7   # on C1
+```
+
+### Milestone 2 – WAN Impairments
+
+Add delay and loss to ContainerLab 1 links on vm1:
+
+```bash
+sudo clab tools netem set -n clab-pa3-wan-router1 -i eth1 --delay 2000ms --jitter 200ms --loss 20
+sudo clab tools netem set -n clab-pa3-wan-router2 -i eth1 --delay 2000ms --jitter 200ms --loss 20
+```
+
+Remove impairments:
+
+```bash
+sudo clab tools netem set -n clab-pa3-wan-router1 -i eth1 --delay 0ms --jitter 0ms --loss 0
+sudo clab tools netem set -n clab-pa3-wan-router2 -i eth1 --delay 0ms --jitter 0ms --loss 0
+```
+
+### Milestone 3 – Backup WAN and Traffic Steering
+
+Deploy backup WAN on vm1:
+
+```bash
+cd ~/computer_networks/containerlab3
+chmod +x *.sh
+./run.sh
+./start-wan-backup.sh
+```
+
+Deploy backup services on C3:
+
+```bash
+kubectl apply -f k8s/c2-ordering.yaml -n team7   # on C3
+kubectl apply -f k8s/c2-inventory.yaml -n team7
+kubectl apply -f k8s/c2-pricing.yaml -n team7
+```
+
+Steer C1 traffic to backup (apply on C1):
+
+```bash
+kubectl apply -f k8s/c1-backup-endpoint.yaml -n team7
+kubectl set env deployment/client ORDERING_SERVICE_URL=http://ordering-backup:5000 -n team7
+```
+
+Revert to primary:
+
+```bash
+kubectl delete -f k8s/c1-backup-endpoint.yaml -n team7
+kubectl set env deployment/client ORDERING_SERVICE_URL=http://ordering-wan:5000 -n team7
+```
+
+### Run Locust (on C1 master)
+
+```bash
+cd ~/team7/computer_networks
+source venv/bin/activate
+locust -f locustfile.py --host=http://10.81.62.48:5000 --headless -u 10 -r 2 -t 60s --csv=analytics_service/scenarios/pa4_baseline
+```
+
+### Generate Plots (on Mac)
+
+```bash
+cd ~/Desktop/computer_networks
+source venv/bin/activate
+python analytics_service/plot_locust.py
+```
+
+Plots saved to `analytics_service/plots/`.
+
