@@ -29,10 +29,10 @@ sudo docker exec -d clab-pa4-backup-wan-lan2-host \
     socat TCP4-LISTEN:${LISTEN_PORT},fork,reuseaddr TCP4:${C3_ORDERING}
 sleep 1
 
-# socat in lan1-host: forward to lan2-host via OSPF
-echo "Starting socat in lan1-host -> ${LAN2_HOST_IP}:${LISTEN_PORT} ..."
+# socat in lan1-host: forward to lan2-host via OSPF (use LAN2 IP, not management IP)
+echo "Starting socat in lan1-host -> 10.8.0.2:${LISTEN_PORT} via OSPF ..."
 sudo docker exec -d clab-pa4-backup-wan-lan1-host \
-    socat TCP4-LISTEN:${LISTEN_PORT},fork,reuseaddr TCP4:${LAN2_HOST_IP}:${LISTEN_PORT}
+    socat TCP4-LISTEN:${LISTEN_PORT},fork,reuseaddr TCP4:10.8.0.2:${LISTEN_PORT}
 sleep 1
 
 # socat on vm1: listen on 30501, forward to lan1-host
@@ -42,4 +42,4 @@ sleep 2
 
 echo ""
 echo "=== Backup WAN relay chain is up ==="
-echo "Traffic: vm1:${LISTEN_PORT} -> lan1-host(${LAN1_HOST_IP}) -> OSPF -> lan2-host(${LAN2_HOST_IP}) -> C3(${C3_ORDERING})"
+echo "Traffic: vm1:${LISTEN_PORT} -> lan1-host(${LAN1_HOST_IP}) -> OSPF -> lan2-host(10.8.0.2) -> C3(${C3_ORDERING})"
